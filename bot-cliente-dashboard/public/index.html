@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Informes - V2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="blob purple"></div>
+        <div class="blob cyan"></div>
+    </div>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <div class="login-logo-placeholder">
+                <img src="logo.png" alt="Logo" style="max-width: 100%; max-height: 100%; border-radius: 8px;" onerror="this.style.display='none'; this.parentNode.innerHTML='LOGO'">
+            </div>
+            <h2>Acceso al Panel</h2>
+            <form id="login-form">
+                <input type="text" id="login-user" placeholder="Usuario (ej. admin, franco)" required>
+                <input type="password" id="login-pass" placeholder="Contraseña" required>
+                <button type="submit" class="glow-on-hover">Ingresar</button>
+            </form>
+            <p id="login-error" class="hidden error-text">Usuario o contraseña incorrectos.</p>
+        </div>
+    </div>
+    
+    <!-- DASHBOARD PRINCIPAL -->
+    <div id="dashboard-layout" class="dashboard-layout hidden">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <img src="logo.png" alt="Logo Quality" style="max-height: 50px;" onerror="this.style.display='none'; this.parentNode.innerHTML='QUALITY HARD'">
+                </div>
+                <div class="user-info">
+                    Hola, <span id="current-username" class="highlight">Usuario</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <h3>Categorías</h3>
+                <ul id="categories-list">
+                    <!-- Se llena dinamico -->
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="logout-btn" class="secondary-btn">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="main-header">
+                <div>
+                    <h1 id="current-category-title">Todas las Categorías</h1>
+                    <p>Visualizando reportes asignados y pendientes</p>
+                </div>
+                <button id="refresh-btn" class="glow-on-hover small-btn">⚡ Sincronizar</button>
+            </header>
+
+            <div id="reports-container" class="reports-container">
+                <div class="loading-state">Cargando informes...</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
