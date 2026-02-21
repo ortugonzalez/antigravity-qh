@@ -15,7 +15,7 @@ app.post('/webhook/n8n-data', (req, res) => {
     if (req.body.reports && Array.isArray(req.body.reports)) {
         // Reemplaza o agrega, dependiendo de la lógica que prefieras. 
         // Por defecto, reemplazaremos para que n8n sea la fuente de verdad.
-        currentReports = req.body.reports; 
+        currentReports = req.body.reports;
     } else if (req.body.report) {
         currentReports.push(req.body.report);
     } else if (Array.isArray(req.body)) {
@@ -23,7 +23,7 @@ app.post('/webhook/n8n-data', (req, res) => {
     } else {
         currentReports.push(req.body); // Fallback: asume que mandaron un informe suelto sin wrapper
     }
-    
+
     console.log(`📥 Datos recibidos de n8n. Total de informes en memoria: ${currentReports.length}`);
     res.json({ status: "success", received: true, total: currentReports.length });
 });
@@ -38,4 +38,10 @@ app.get('/api/bot-data', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor del cliente iniciado en http://0.0.0.0:${PORT}`);
+
+    // Captura las señales de Easypanel para un apagado limpio, evitando el error de código 1
+    process.on('SIGTERM', () => {
+        console.log('Recibida señal SIGTERM, apagando servidor...');
+        process.exit(0);
+    });
 });
