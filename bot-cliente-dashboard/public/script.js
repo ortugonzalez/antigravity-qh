@@ -1,132 +1,219 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
+    const loginOverlay = document.getElementById('login-overlay');
+    const dashboardLayout = document.getElementById('dashboard-layout');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutBtn = document.getElementById('logout-btn');
     const refreshBtn = document.getElementById('refresh-btn');
-    const statusMsg = document.getElementById('status-message');
     const container = document.getElementById('reports-container');
+    const catList = document.getElementById('categories-list');
+    const currentCatTitle = document.getElementById('current-category-title');
+    const currentUserSpan = document.getElementById('current-username');
 
+    let allReports = [];
+    let availableTechs = [];
+    let currentCategoryFilter = 'Todas';
+
+    // --- AUTHENTICATION ---
+    const checkAuth = async () => {
+        try {
+            const res = await fetch('/api/check-auth');
+            if (res.ok) {
+                const data = await res.json();
+                currentUserSpan.textContent = data.username.toUpperCase();
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        } catch (e) { showLogin(); }
+    };
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('login-user').value.toLowerCase();
+        const password = document.getElementById('login-pass').value;
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            if (res.ok) {
+                loginError.classList.add('hidden');
+                currentUserSpan.textContent = username.toUpperCase();
+                showDashboard();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        } catch (e) {
+            loginError.textContent = "Error de red";
+            loginError.classList.remove('hidden');
+        }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+        await fetch('/api/logout', { method: 'POST' });
+        showLogin();
+    });
+
+    const showLogin = () => {
+        loginOverlay.classList.remove('hidden');
+        dashboardLayout.classList.add('hidden');
+    };
+    
+    const showDashboard = () => {
+        loginOverlay.classList.add('hidden');
+        dashboardLayout.classList.remove('hidden');
+        fetchData();
+    };
+
+    // --- DATA ---
     const fetchData = async () => {
         try {
-            refreshBtn.textContent = "Sincronizando...";
-            
-            const response = await fetch('/api/bot-data', {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            
-            if (!response.ok) throw new Error('Error al obtener datos');
-            
-            const result = await response.json();
-            const reports = result.data || [];
-
-            renderReports(reports);
-            showStatusMessage('Datos sincronizados con éxito', '#00f5d4');
-            
-        } catch (error) {
-            console.error(error);
-            showStatusMessage('Error de conexión con el servidor', '#ff3366');
-            container.innerHTML = '<div class="empty-state">No se pudo cargar la información. Intenta de nuevo más tarde.</div>';
-        } finally {
-            refreshBtn.textContent = "Sincronizar Datos";
-        }
-    };
-
-    const renderReports = (reports) => {
-        container.innerHTML = '';
-        
-        if (reports.length === 0) {
-            container.innerHTML = '<div class="empty-state">No hay informes registrados por el momento. Esperando datos de n8n...</div>';
-            return;
-        }
-
-        // 1. Agrupar por Categoría, y luego por Técnico
-        const byCategory = {};
-        
-        reports.forEach(r => {
-            // El usuario podría enviar r directo o dentro de r.report dependiendo de n8n
-            const data = r.report || r;
-            
-            const cat = data.categoria || data.CATEGORIA || data.Categoria || 'Sin Categoría';
-            const tec = data.tecnico || data['Técnico'] || data.Tecnico || 'Sin Asignar';
-            
-            if (!byCategory[cat]) byCategory[cat] = {};
-            if (!byCategory[cat][tec]) byCategory[cat][tec] = [];
-            
-            byCategory[cat][tec].push(data);
-        });
-
-        // 2. Construir el DOM basándose en la agrupación
-        for (const cat in byCategory) {
-            const catSection = document.createElement('div');
-            catSection.className = 'category-section';
-            catSection.innerHTML = `<h2 class="category-title">${cat}</h2>`;
-            
-            const tecGrid = document.createElement('div');
-            tecGrid.className = 'technicians-grid';
-
-            for (const tec in byCategory[cat]) {
-                const tecCard = document.createElement('div');
-                tecCard.className = 'technician-card';
-                tecCard.innerHTML = `<h3 class="technician-title">👨‍🔧 Técnico: ${tec}</h3>`;
-                
-                const reqList = document.createElement('div');
-                reqList.className = 'requests-list';
-                
-                byCategory[cat][tec].forEach(req => {
-                    const urg = (req.urgencia || req.Urgencia || req['PRIORIDAD DE RESPUESTA'] || 'Normal').toLowerCase();
-                    let urgColor = '#00f5d4'; // Baja
-                    let borderColor = '#00f5d4';
-                    
-                    if (urg.includes('alta')) { urgColor = '#ff3366'; borderColor = '#ff3366'; }
-                    else if (urg.includes('media')) { urgColor = '#ffcc00'; borderColor = '#ffcc00'; }
-
-                    const reqItem = document.createElement('div');
-                    reqItem.className = 'report-item';
-                    reqItem.style.borderLeftColor = borderColor;
-                    
-                    const estado = req.estado || req.Estado || req['ESTADO DE TICKET'] || 'Pendiente';
-                    const estadoClass = estado.toLowerCase().replace(' ', '-');
-
-                    reqItem.innerHTML = `
-                        <div class="report-header">
-                            <div>
-                                <span class="company-name">${req.empresa || req.Empresa || req.EMPRESA || 'Empresa Desconocida'}</span>
-                                <span class="client-name">${req.nombre || req.Nombre || req['NOMBRE DE CLIENTE'] || req.mail || req.Email || req.EMAIL || 'Cliente'}</span>
-                            </div>
-                            <span class="badge" style="background-color: ${urgColor}22; color: ${urgColor}">${urg.toUpperCase()}</span>
-                        </div>
-                        <p class="report-desc">${req.informe || req.Informe || req['DESCRIPCION SUCESO'] || 'Sin detalles en el informe.'}</p>
-                        <div class="report-footer">
-                            <span>📞 ${req.telefono || req['Número'] || req['NUMERO DE CONTACTO'] || '-'}</span>
-                            <span>Estado: <span class="status ${estadoClass}">${estado}</span></span>
-                        </div>
-                    `;
-                    reqList.appendChild(reqItem);
-                });
-                
-                tecCard.appendChild(reqList);
-                tecGrid.appendChild(tecCard);
+            refreshBtn.textContent = '⚡...';
+            const res = await fetch('/api/bot-data');
+            if (!res.ok) {
+                if (res.status === 401) showLogin();
+                throw new Error('Error al obtener datos');
             }
+            const result = await res.json();
+            allReports = result.data || [];
+            availableTechs = result.technicians || [];
             
-            catSection.appendChild(tecGrid);
-            container.appendChild(catSection);
+            updateSidebar();
+            renderMain();
+        } catch (e) {
+            container.innerHTML = '<div class="empty-state">Error cargando datos.</div>';
+        } finally {
+            refreshBtn.textContent = '⚡ Sincronizar';
         }
-    };
-
-    const showStatusMessage = (msg, color) => {
-        statusMsg.textContent = msg;
-        statusMsg.style.color = color;
-        statusMsg.classList.remove('hidden');
-        statusMsg.style.opacity = '1';
-        statusMsg.style.transform = 'translateY(0)';
-        
-        setTimeout(() => {
-            statusMsg.classList.add('hidden');
-            statusMsg.style.opacity = '0';
-            statusMsg.style.transform = 'translateY(10px)';
-        }, 3000);
     };
 
     refreshBtn.addEventListener('click', fetchData);
 
-    // Carga inicial
-    fetchData();
+    // --- UI RENDERING ---
+    const updateSidebar = () => {
+        const counts = { 'Todas': allReports.length };
+        allReports.forEach(r => {
+            const cat = r.categoria || r.CATEGORIA || r.Categoria || 'Sin Categoría';
+            counts[cat] = (counts[cat] || 0) + 1;
+        });
+
+        catList.innerHTML = '';
+        Object.keys(counts).forEach(cat => {
+            const li = document.createElement('li');
+            if (cat === currentCategoryFilter) li.classList.add('active');
+            li.innerHTML = `<span>${cat}</span> <span class="count">${counts[cat]}</span>`;
+            li.addEventListener('click', () => {
+                currentCategoryFilter = cat;
+                currentCatTitle.textContent = cat === 'Todas' ? 'Todas las Categorías' : cat;
+                Array.from(catList.children).forEach(c => c.classList.remove('active'));
+                li.classList.add('active');
+                renderMain();
+            });
+            catList.appendChild(li);
+        });
+    };
+
+    const renderMain = () => {
+        container.innerHTML = '';
+        let filtered = allReports;
+        if (currentCategoryFilter !== 'Todas') {
+            filtered = allReports.filter(r => {
+                const c = r.categoria || r.CATEGORIA || r.Categoria || 'Sin Categoría';
+                return c === currentCategoryFilter;
+            });
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="empty-state">No hay informes para esta categoría.</div>';
+            return;
+        }
+
+        // Agrupar por técnico
+        const byTec = {};
+        filtered.forEach(r => {
+            const tec = r.tecnico || r['Técnico'] || r.Tecnico || 'Sin Asignar';
+            if (!byTec[tec]) byTec[tec] = [];
+            byTec[tec].push(r);
+        });
+
+        const grid = document.createElement('div');
+        grid.className = 'technicians-grid';
+
+        for (const tec in byTec) {
+            const col = document.createElement('div');
+            col.className = 'technician-card';
+            col.innerHTML = `<h3 class="technician-title">👷 ${tec.toUpperCase()}</h3>`;
+            
+            const list = document.createElement('div');
+            list.className = 'requests-list';
+
+            byTec[tec].forEach(req => {
+                const urg = (req.urgencia || req.Urgencia || req['PRIORIDAD DE RESPUESTA'] || 'Normal').toLowerCase();
+                let urgColor = '#00f5d4'; let borderColor = '#00f5d4';
+                if (urg.includes('alta')) { urgColor = '#ff3366'; borderColor = '#ff3366'; }
+                else if (urg.includes('media')) { urgColor = '#ffcc00'; borderColor = '#ffcc00'; }
+
+                const estado = req.estado || req.Estado || req['ESTADO DE TICKET'] || 'Pendiente';
+                const estadoClass = estado.toLowerCase().replace(' ', '-');
+
+                // Opciones de reasignacion
+                let optionsHtml = '';
+                availableTechs.forEach(t => {
+                    optionsHtml += `<option value="${t}" ${t.toLowerCase() === tec.toLowerCase() ? 'selected' : ''}>${t}</option>`;
+                });
+
+                const item = document.createElement('div');
+                item.className = 'report-item';
+                item.style.borderLeftColor = borderColor;
+                item.innerHTML = `
+                    <div class="report-header">
+                        <div>
+                            <span class="company-name">${req.empresa || req.Empresa || req.EMPRESA || 'Empresa Desconocida'}</span>
+                            <span class="client-name">${req.nombre || req.Nombre || req['NOMBRE DE CLIENTE'] || 'Cliente'}</span>
+                        </div>
+                        <span class="badge" style="background-color: ${urgColor}22; color: ${urgColor}">${urg.toUpperCase()}</span>
+                    </div>
+                    <p class="report-desc">${req.informe || req.Informe || req['DESCRIPCION SUCESO'] || 'Sin detalles.'}</p>
+                    <div class="report-footer">
+                        <span>📞 ${req.telefono || req['NUMERO DE CONTACTO'] || '-'}</span>
+                        <span><span class="status ${estadoClass}">${estado}</span></span>
+                    </div>
+                    <div class="reassign-widget">
+                        <span style="font-size:0.8rem; color:#a0a0b0;">Enviar a:</span>
+                        <select id="sel-${req.id}">${optionsHtml}</select>
+                        <button onclick="reassign('${req.id}')">Asignar</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            col.appendChild(list);
+            grid.appendChild(col);
+        }
+        container.appendChild(grid);
+    };
+
+    // Reasignar global fn
+    window.reassign = async (reportId) => {
+        const select = document.getElementById(`sel-${reportId}`);
+        const newTech = select.value;
+        try {
+            const res = await fetch('/api/reassign', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportId, newTechnician: newTech })
+            });
+            if (res.ok) {
+                // Refresh local
+                const r = allReports.find(x => x.id === reportId);
+                if(r) r.tecnico = newTech;
+                renderMain();
+            } else {
+                alert("Error al reasignar");
+            }
+        } catch (e) { alert("Error de conexión"); }
+    };
+
+    // Init
+    checkAuth();
 });
