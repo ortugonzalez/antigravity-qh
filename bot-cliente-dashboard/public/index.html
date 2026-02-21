@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Informes - Cliente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="blob purple"></div>
+        <div class="blob cyan"></div>
+    </div>
+    
+    <div class="dashboard-container">
+        <header>
+            <h1><span class="highlight">Antigravity</span> Board</h1>
+            <p>Panel integral de informes por categoría y técnico</p>
+        </header>
+
+        <!-- Contenedor dinámico donde se inyectarán las categorías y técnicos -->
+        <div id="reports-container" class="reports-container">
+            <div class="loading-state">Cargando informes de n8n...</div>
+        </div>
+
+        <div class="controls-section">
+            <button id="refresh-btn" class="glow-on-hover">Sincronizar Datos</button>
+            <div id="status-message" class="hidden">Datos sincronizados con éxito.</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
