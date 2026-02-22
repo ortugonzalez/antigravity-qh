@@ -1,0 +1,13 @@
+{
+    "name": "bot-cliente-dashboard",
+    "version": "6.0.0",
+    "description": "Dashboard V6 Auditoria e Historial",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "cookie-parser": "^1.4.6"
+    }
+}
