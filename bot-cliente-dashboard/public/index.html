@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panel de Informes - V5 Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="blob blue"></div>
+    </div>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <div class="login-logo-placeholder">
+                <img src="logo.png" alt="Logo Quality" onerror="this.style.display='none'; this.parentNode.innerHTML='QUALITY HARD'">
+            </div>
+            <h2>Acceso al Panel</h2>
+            <form id="login-form">
+                <input type="text" id="login-user" placeholder="Usuario (ej. hugo, franco)" required>
+                <input type="password" id="login-pass" placeholder="Contraseña" required>
+                <button type="submit" class="glow-on-hover">Ingresar</button>
+            </form>
+            <p id="login-error" class="hidden error-text">Usuario o contraseña incorrectos.</p>
+        </div>
+    </div>
+    
+    <!-- DASHBOARD PRINCIPAL -->
+    <div id="dashboard-layout" class="dashboard-layout hidden">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <img src="logo.png" alt="Logo Quality" onerror="this.style.display='none'; this.parentNode.innerHTML='QUALITY HARD'">
+                </div>
+                <div class="user-info">
+                    Hola, <span id="current-username" class="highlight">Usuario</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <h3>Estado del Ticket</h3>
+                <ul id="categories-list">
+                    <!-- Se llena dinamico con ESTADOS -->
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p id="last-sync-time" class="sync-text">Última Sync: --:--:--</p>
+                <button id="logout-btn" class="secondary-btn">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="title-area">
+                    <h1 id="current-category-title">Todos los Tickets</h1>
+                    <p>Gestión activa de operaciones</p>
+                </div>
+                <button id="refresh-btn" class="glow-on-hover small-btn">⚡ Sincronizar</button>
+            </header>
+            
+            <!-- V4/V5 TABS DE TÉCNICOS -->
+            <div id="technician-tabs" class="tabs-container">
+                <!-- Se llena dinámico -->
+            </div>
+
+            <div id="reports-container" class="reports-container">
+                <div class="loading-state">Cargando informes...</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST ALERT -->
+    <div id="toast" class="toast hidden">Datos Guardados!</div>
+
+    <script src="script.js"></script>
+</body>
+</html>
