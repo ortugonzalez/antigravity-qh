@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panel de Informes - V7 Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0086CE">
+    <link rel="stylesheet" href="style.css?v=${Date.now()}">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="blob blue"></div>
+    </div>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <div class="login-logo-placeholder">
+                <img src="logo.png" alt="Logo Quality" onerror="this.style.display='none'; this.parentNode.innerHTML='QUALITY HARD'">
+            </div>
+            <h2>Acceso al Panel</h2>
+            <form id="login-form">
+                <input type="text" id="login-user" placeholder="Usuario (ej. hugo, franco)" required>
+                <input type="password" id="login-pass" placeholder="Contraseña" required>
+                <button type="submit" class="glow-on-hover">Ingresar</button>
+            </form>
+            <p id="login-error" class="hidden error-text">Usuario o contraseña incorrectos.</p>
+        </div>
+    </div>
+    
+    <!-- DASHBOARD PRINCIPAL -->
+    <div id="dashboard-layout" class="dashboard-layout hidden">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <img src="logo.png" alt="Logo Quality" onerror="this.style.display='none'; this.parentNode.innerHTML='QUALITY HARD'">
+                </div>
+                <div class="user-info">
+                    Hola, <span id="current-username" class="highlight">Usuario</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <h3>Vistas</h3>
+                <ul id="main-views-list" style="margin-bottom: 20px;">
+                    <li id="nav-tickets" class="active" onclick="switchView('tickets')"><span>🎫 Tickets (Kanban/Grilla)</span></li>
+                    <li id="nav-empresas" onclick="switchView('empresas')"><span>🏢 Panel de Empresas</span></li>
+                </ul>
+                <h3 id="estados-title">Estado del Ticket</h3>
+                <ul id="categories-list">
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p id="last-sync-time" class="sync-text">Última Sync: --:--:--</p>
+                <button id="logout-btn" class="secondary-btn">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <!-- MASCARA MOBILE -->
+        <div id="mobile-overlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1900; transition: opacity 0.3s ease;"></div>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="title-area" style="display:flex; align-items:center; gap:10px;">
+                    <button id="mobile-menu-btn" class="icon-btn hidden-desktop" style="font-size:1.8rem; height:auto; width:auto; padding:0 5px;">☰</button>
+                    <div>
+                        <h1 id="current-category-title">Todos los Tickets</h1>
+                        <p>Gestión activa de operaciones</p>
+                    </div>
+                </div>
+                <!-- V15 PWA Install Button (Mobile Only visible when prompt triggers) -->
+                <button class="action-btn hidden" id="install-pwa-btn" style="background:#ff3366; margin-bottom: 15px;">📲 Instalar App (PWA)</button>
+                <div class="header-controls">
+                    <button id="theme-toggle" class="icon-btn" title="Modo Claro/Oscuro">☀️</button>
+                    <div class="notification-wrapper">
+                        <button id="noti-bell" class="icon-btn" title="Notificaciones">🔔<span id="noti-badge" class="badge-dot hidden">0</span></button>
+                        <div id="noti-dropdown" class="noti-dropdown hidden"></div>
+                    </div>
+                    <input type="text" id="search-input" class="search-input" placeholder="Buscar ticket...">
+                    <select id="time-filter" class="sort-select">
+                        <option value="24">🎟️ Últimas 24 hs</option>
+                        <option value="168" selected>📅 Últimos 7 días</option>
+                        <option value="336">📆 Últimos 14 días</option>
+                        <option value="720">🗓️ Últimos 30 días</option>
+                        <option value="all">♾️ Historial Completo</option>
+                    </select>
+                    <select id="sort-select" class="sort-select">
+                        <option value="asc">Antiguos Primero</option>
+                        <option value="desc">Recientes Primero</option>
+                        <option value="urgencia">Mayor Urgencia</option>
+                    </select>
+                    <button id="refresh-btn" class="glow-on-hover small-btn">⚡ Sync</button>
+                    <button id="export-btn" class="glow-on-hover small-btn hidden" style="background:#28a745; margin-left: 5px;">📥 CSV</button>
+                </div>
+            </header>
+            
+            <!-- TABS DE TÉCNICOS -->
+            <div id="technician-tabs" class="tabs-container">
+            </div>
+
+            <!-- V7 SIMPLIFIED GRID -->
+            <div id="reports-container" class="reports-container">
+                <div class="loading-state">Cargando informes...</div>
+            </div>
+
+            <!-- V12 COMPANIES GRID -->
+            <div id="companies-container" class="reports-container hidden">
+                <div class="loading-state">Cargando empresas...</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- V7 MODAL DETALLE DE TICKET -->
+    <div id="ticket-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Detalle del Ticket <span id="modal-ticket-id" class="highlight"></span></h2>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-left">
+                    <div class="info-block">
+                        <h3>Empresa</h3>
+                        <p id="modal-empresa" class="big-text"></p>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-block">
+                            <h3>Contacto</h3>
+                            <p id="modal-contacto"></p>
+                        </div>
+                        <div class="info-block">
+                            <h3>Categoría</h3>
+                            <p id="modal-categoria"></p>
+                        </div>
+                    </div>
+                    <div class="info-block">
+                        <h3>Descripción Inicial</h3>
+                        <div id="modal-descripcion" class="desc-box"></div>
+                    </div>
+                </div>
+
+                <div class="modal-right">
+                    <div class="widget-box">
+                         <label>🚦 Gestión Unificada</label>
+                         <div style="display:flex; gap:10px; margin-bottom:10px;">
+                             <select id="modal-status-select" class="select-styled" style="flex:1"></select>
+                             <select id="modal-tech-select" class="select-styled" style="flex:1"></select>
+                         </div>
+                         <textarea id="modal-notes" class="notes-area" placeholder="Agrega notas descriptivas de lo sucedido..."></textarea>
+                         <button class="action-btn" id="btn-update-status" style="margin-top:5px; width:100%">💾 Guardar Cambios</button>
+                         <button class="action-btn hidden" id="btn-unlock-ticket" style="margin-top:5px; width:100%; background:#444;">🔓 Reabrir Ticket</button>
+                    </div>
+
+                    <div class="history-box">
+                        <label>📖 Historial de Auditoría</label>
+                        <div id="modal-history-list" class="history-list">
+                            <!-- Array of logs here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST ALERT -->
+    <div id="toast" class="toast hidden">Datos Guardados!</div>
+
+    <script>document.write('<script src="script.js?v=' + Date.now() + '"><\/script>');</script>
+</body>
+</html>
